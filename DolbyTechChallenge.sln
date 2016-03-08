@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 
 Project("{6224432B-ED3D-9EF3-DEDE-3C05CFAE7A9C}") = "DolbyTechChallenge", "Assembly-CSharp.csproj", "{A68362BF-2BEA-1E29-C92D-B9B590C099ED}"
 EndProject
+Project("{6224432B-ED3D-9EF3-DEDE-3C05CFAE7A9C}") = "DolbyTechChallenge", "Assembly-CSharp-Editor.csproj", "{B1128D14-8B81-798B-B803-EA3774F54B47}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +15,10 @@ Global
 		{A68362BF-2BEA-1E29-C92D-B9B590C099ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A68362BF-2BEA-1E29-C92D-B9B590C099ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A68362BF-2BEA-1E29-C92D-B9B590C099ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1128D14-8B81-798B-B803-EA3774F54B47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1128D14-8B81-798B-B803-EA3774F54B47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1128D14-8B81-798B-B803-EA3774F54B47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1128D14-8B81-798B-B803-EA3774F54B47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

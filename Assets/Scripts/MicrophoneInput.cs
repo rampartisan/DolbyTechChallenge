@@ -12,7 +12,6 @@ using System.Collections;
 // write it to an AudioSource (and we therefore need an AudioSource component!)
 
 [RequireComponent(typeof(AudioSource))]
-
 public class MicrophoneInput : MonoBehaviour {
 
 // --- VARIABLE DECLERATIONS --- //
@@ -28,46 +27,45 @@ public class MicrophoneInput : MonoBehaviour {
 	// Create AudioMixer public field
 	public AudioMixer outputMixer;
 
-	// Flags to start/stop microphone
+	// The audio source component that we will write microphone data to
+	AudioSource input;
+
+	// Flags to start/stop microphone and mute
 	public bool enable = false;
 	public bool disable = false;
-
+	public bool currentState = false;
+	public bool muteAudio = true;
 	// String to store the device we are using
 	public string selectedDevice { get; private set; }
 
-	// Storgae f or microphone capabilities
+	// Storgae of microphone capabilities
 	private int minFreq,maxFreq;
 
 	// Flag to check that we have chosen a device
 	private bool deviceSet = false;
 
-	// The audio source component that we will write microphone data to
-	AudioSource input;
-
 	// --- MAIN --- //
 	void Start() {
-		// Set master volume of AudioMixer to minimum (for this application we never want to hear
-		// the output, so more control is not needed)
-		outputMixer.SetFloat ("masterVol", -80.0f);
-		//Make sure AudioSource is assigned to component and zero its data
+		// Set mixer volume dependent on public feild muteOutput
+		setMixerMute();
+		//Make sure AudioSource is assigned to component, make sure we have an empty audio clip and set it to loop
 		input = GetComponent<AudioSource>();
 		input.clip = null;
 		input.loop = true;
 	}
 
 	void Update() {
-		// On each update check to see if microphone should be on/off and set accordingly
+		// On each update check to see if microphone should be on/off or output should be mutedand set accordingly
 		if(enable) {
 			micOn ();
 		}
 		if (disable) {
 			micOff ();
 		}
-
-		// reset flags
+		// We only need to set on/off once per action so reset the flags
 		enable = false;
 		disable = false;
-
+		setMixerMute ();
 	}
 
 	// --- MICROPHONE CONTROL --- //
@@ -80,11 +78,9 @@ public class MicrophoneInput : MonoBehaviour {
 		if ((minFreq - maxFreq) == 0) {
 			maxFreq = 44100;
 		}
-
-		print (maxFreq.ToString ());
 	}
 
-	// Writes the data from the microphone to the AudioSource
+	// Writes the data from the microphone to the AudioSource (essentialy use it as a circular buffer)
 	void micOn() {
 		// Make sure that the device isnt allready recording (shouldnt happen, just for safety)
 		if (!Microphone.IsRecording (selectedDevice)) {
@@ -93,8 +89,9 @@ public class MicrophoneInput : MonoBehaviour {
 			// Empty while to wait for recording to start
 			while (!(Microphone.GetPosition (selectedDevice) > 0)) {
 			}
-			// Play the audio
+			// Play the audio (needs to be playing in order to get data)
 			input.Play ();
+			currentState = true;
 		}
 	}
 
@@ -103,7 +100,17 @@ public class MicrophoneInput : MonoBehaviour {
 		input.Stop ();
 		Microphone.End (selectedDevice);
 		input.clip = null;
+		currentState = false;
 
+	}
+
+	// Method to set the AudioMixer volume (default is off, we dont really need to hear our voices)
+	void setMixerMute() {
+		if (muteAudio) {
+			outputMixer.SetFloat ("masterVol", -80.0f);
+		} else {
+			outputMixer.SetFloat ("masterVol", 0.0f);
+		}
 	}
 
 	// --- GUI --- // 
@@ -113,29 +120,30 @@ public class MicrophoneInput : MonoBehaviour {
 	void OnGUI() {
 		micSelectGUI((Screen.width/2)-150, (Screen.height/2)-75, 300, 100, 10, -300);
 	}
-
+		
 	public void micSelectGUI(float left,float top, float width, float height, float buttontop, float buttonLeft) {
 		// if we have more than 1 device and we have not set it yet provide a GUI for choosing
-		if (Microphone.devices.Length > 1 && deviceSet == false)
-			for (int devIdx = 0; devIdx < Microphone.devices.Length; ++devIdx)
+		if (Microphone.devices.Length > 1 && deviceSet == false) {
+			// Iterate over each device, creating button to allow it to be selected
+			for (int devIdx = 0; devIdx < Microphone.devices.Length; ++devIdx) {
+				// When a device is chosed set it as the selected device,set the selected flag, get its capabilities and then start the microphone
 				if (GUI.Button (new Rect (left + ((width + buttonLeft) * devIdx), top + ((height + buttontop) * devIdx), width, height), Microphone.devices [devIdx].ToString ())) {			
 					selectedDevice = Microphone.devices [devIdx].ToString ();
 					deviceSet = true;
 					getDeviceCaps ();
 					micOn ();
 				}
-		// If there is only 1 device, default to it
+			}
+		}
+		// If there is only 1 device, default to it - set it as selected device, set chosen flag, get its capabilities and start the microphone
 		if (Microphone.devices.Length < 2 && deviceSet == false) {
-			print ("using default device");
 			selectedDevice = Microphone.devices [0].ToString ();
 			deviceSet = true;
 			getDeviceCaps ();
 			micOn ();
-
 		}
-			
 	}
-
+		
 	// --- DATA ACCESS --- //
 
 	// Returns array[blocksize] of samples from the microphone, this is the core
@@ -145,4 +153,12 @@ public class MicrophoneInput : MonoBehaviour {
 		input.GetOutputData (data, 0);
 		return data;
 	}
+
+	// Returns the position in the buffer the microphone is currently recording at, needed to only reference
+	// the last n samples of audio
+	public int recPos() {
+		int pos = Microphone.GetPosition (selectedDevice);
+		return pos;
+	}
+// --- END --- //
 }
