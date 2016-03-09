@@ -2,8 +2,7 @@
 using UnityEngine.Audio;
 using System.Collections;
 
-// Microphone input script to be attached to an empty game object, written by Alex Baldwin March 2016
-// http://www.alexbaldwin.audio/
+// Microphone input script to be attached to an empty game object
 // It is a combination/update of methods from these two sources. All comments my own.
 // http://wiki.unity3d.com/index.php/Mic_Input
 // http://answers.unity3d.com/questions/1113690/microphone-input-in-unity-5x.html
@@ -26,23 +25,23 @@ public class MicrophoneInput : MonoBehaviour {
 
 	// Create AudioMixer public field
 	public AudioMixer outputMixer;
-
 	// The audio source component that we will write microphone data to
 	AudioSource micInput;
-
 	// Flags to start/stop microphone and mute
 	public bool enable = false;
 	public bool disable = false;
-	public bool currentState = false;
 	public bool muteAudio = true;
+	// Field to set the length of the recording (audioSource) in seconds
+	public int recSize = 1;
+
 	// String to store the device we are using
-	public string selectedDevice { get; private set; }
-
-	// Storgae of microphone capabilities, public so we can access them for FFT calculations later
-	public int minFreq,maxFreq;
-
+	private string selectedDevice;
+	// Storgae of microphone capabilities
+	private int minFreq,maxFreq;
 	// Flag to check that we have chosen a device
 	private bool deviceSet = false;
+	// Flag to indicate current state of the microphpone
+	private bool currentState = false;
 
 	// --- MAIN --- //
 	void Start() {
@@ -70,11 +69,11 @@ public class MicrophoneInput : MonoBehaviour {
 
 	// --- MICROPHONE CONTROL --- //
 
-	// Get capabilties of the microphone we are using
+	// Get capabilties of the microphone we are using, its name and min/max sample rates
 	void getDeviceCaps() {
 		Microphone.GetDeviceCaps (selectedDevice, out minFreq, out maxFreq);
 		// According to documentation if min-max = 0 then the device supports
-		// 44.1khz samp freq.
+		// 44.1khz samp freq. (this is a windows sepecific thing)
 		if ((minFreq - maxFreq) == 0) {
 			maxFreq = 44100;
 		}
@@ -84,8 +83,8 @@ public class MicrophoneInput : MonoBehaviour {
 	void micOn() {
 		// Make sure that the device isnt allready recording (shouldnt happen, just for safety)
 		if (!Microphone.IsRecording (selectedDevice)) {
-			// Set AudioSource clip to data from the microphone,looping on, 1 second
-			micInput.clip = Microphone.Start (selectedDevice, true, 1, maxFreq);
+			// Set AudioSource clip to data from the microphone,looping on
+			micInput.clip = Microphone.Start (selectedDevice, true, recSize, maxFreq);
 			// Empty while to wait for recording to start
 			while (!(Microphone.GetPosition (selectedDevice) > 0)) {
 			}
@@ -144,10 +143,9 @@ public class MicrophoneInput : MonoBehaviour {
 		}
 	}
 		
-	// --- DATA ACCESS --- //
+	// --- ACCESSORS --- //
 
-	// Returns array[blocksize] of samples from the microphone, this is the core
-	// output of this script and is called by the analysis scripts.
+	// Returns array[blocksize] of samples from the microphone
 	public float[] getSamps(int blockSize, int offset) {
 		float[] data = new float[blockSize];
 		micInput.GetOutputData (data, offset);
@@ -157,8 +155,28 @@ public class MicrophoneInput : MonoBehaviour {
 	// Returns the position in the buffer the microphone is currently recording at, needed to only reference
 	// the last n samples of audio
 	public int micPos() {
-		int pos = Microphone.GetPosition (selectedDevice);
-		return pos;
+		return Microphone.GetPosition (selectedDevice);
 	}
-// --- END --- //
+
+	// Returns the sample rate of the device we are currently using
+	public int sampleRate() {
+		return maxFreq;
+	}
+
+	// Check if device has been set (otherwise variables such as sample rate will be invalid)
+	public bool deviceReady() {
+		return deviceSet;
+	}
+
+	// Get current state of device
+	public bool getState() {
+		return currentState;
+	}
+
+	// Get name of currently used device
+	public string getName() {
+		return selectedDevice;
+	}
+
+// --- END ALL --- //
 }
