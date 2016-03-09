@@ -15,3 +15,4 @@
 /Users/Alex/AAU/Misc/DolbyTechChallenge/Temp/bin/Debug/Assembly-CSharp.dll
 /Users/Alex/AAU/Misc/DolbyTechChallenge/obj/Debug/Assembly-CSharp.dll
 /Users/Alex/AAU/Misc/DolbyTechChallenge/obj/Debug/Assembly-CSharp.dll.mdb
+/Users/Alex/AAU/Misc/DolbyTechChallenge/Temp/bin/Debug/Qualcomm.Vuforia.UnityExtensions.dll

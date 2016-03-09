@@ -4,7 +4,7 @@ using System.Collections;
 
 // Microphone input script to be attached to an empty game object, written by Alex Baldwin March 2016
 // http://www.alexbaldwin.audio/
-// It is a combination/update of methods from these two sources.
+// It is a combination/update of methods from these two sources. All comments my own.
 // http://wiki.unity3d.com/index.php/Mic_Input
 // http://answers.unity3d.com/questions/1113690/microphone-input-in-unity-5x.html
 
@@ -28,7 +28,7 @@ public class MicrophoneInput : MonoBehaviour {
 	public AudioMixer outputMixer;
 
 	// The audio source component that we will write microphone data to
-	AudioSource input;
+	AudioSource micInput;
 
 	// Flags to start/stop microphone and mute
 	public bool enable = false;
@@ -38,8 +38,8 @@ public class MicrophoneInput : MonoBehaviour {
 	// String to store the device we are using
 	public string selectedDevice { get; private set; }
 
-	// Storgae of microphone capabilities
-	private int minFreq,maxFreq;
+	// Storgae of microphone capabilities, public so we can access them for FFT calculations later
+	public int minFreq,maxFreq;
 
 	// Flag to check that we have chosen a device
 	private bool deviceSet = false;
@@ -49,9 +49,9 @@ public class MicrophoneInput : MonoBehaviour {
 		// Set mixer volume dependent on public feild muteOutput
 		setMixerMute();
 		//Make sure AudioSource is assigned to component, make sure we have an empty audio clip and set it to loop
-		input = GetComponent<AudioSource>();
-		input.clip = null;
-		input.loop = true;
+		micInput = GetComponent<AudioSource>();
+		micInput.clip = null;
+		micInput.loop = true;
 	}
 
 	void Update() {
@@ -85,21 +85,21 @@ public class MicrophoneInput : MonoBehaviour {
 		// Make sure that the device isnt allready recording (shouldnt happen, just for safety)
 		if (!Microphone.IsRecording (selectedDevice)) {
 			// Set AudioSource clip to data from the microphone,looping on, 1 second
-			input.clip = Microphone.Start (selectedDevice, true, 1, maxFreq);
+			micInput.clip = Microphone.Start (selectedDevice, true, 1, maxFreq);
 			// Empty while to wait for recording to start
 			while (!(Microphone.GetPosition (selectedDevice) > 0)) {
 			}
 			// Play the audio (needs to be playing in order to get data)
-			input.Play ();
+			micInput.Play ();
 			currentState = true;
 		}
 	}
 
 	// Stop playback,stop recording,set audio clip to null
 	void micOff() {
-		input.Stop ();
+		micInput.Stop ();
 		Microphone.End (selectedDevice);
-		input.clip = null;
+		micInput.clip = null;
 		currentState = false;
 
 	}
@@ -148,15 +148,15 @@ public class MicrophoneInput : MonoBehaviour {
 
 	// Returns array[blocksize] of samples from the microphone, this is the core
 	// output of this script and is called by the analysis scripts.
-	public float[] getSamps(int blockSize) {
+	public float[] getSamps(int blockSize, int offset) {
 		float[] data = new float[blockSize];
-		input.GetOutputData (data, 0);
+		micInput.GetOutputData (data, offset);
 		return data;
 	}
 
 	// Returns the position in the buffer the microphone is currently recording at, needed to only reference
 	// the last n samples of audio
-	public int recPos() {
+	public int micPos() {
 		int pos = Microphone.GetPosition (selectedDevice);
 		return pos;
 	}
